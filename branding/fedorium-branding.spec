@@ -5,7 +5,7 @@
 
 Name:           fedorium-branding
 Version:        1.8
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Fedorium Linux branding, wallpapers and the Fedorium Setup profile wizard
 License:        MIT AND CC-BY-SA-4.0
 URL:            https://copr.fedorainfracloud.org/coprs/%{copr_owner}/%{copr_project}/
