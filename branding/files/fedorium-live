@@ -1,19 +1,19 @@
 #!/bin/bash
-# Fedorium — pregătește sesiunea live (rulează doar pe ISO, înainte de ecranul de login).
-# Plasă de siguranță: dacă livesys n-a creat utilizatorul live, îl creează aici.
+# Fedorium — prepares the live session (ISO only, before the login screen).
+# Safety net: if livesys didn't create the live user, create it here.
 LOG=/run/fedorium-live.log
 exec >>"$LOG" 2>&1
 echo "== fedorium-live $(date)"
 
 if ! id liveuser >/dev/null 2>&1; then
-    echo "liveuser lipsă, îl creez"
+    echo "liveuser missing, creating it"
     useradd -m -c "Fedorium Live" -G wheel liveuser
 fi
 passwd -d liveuser
 echo "liveuser ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/90-fedorium-liveuser
 chmod 440 /etc/sudoers.d/90-fedorium-liveuser
 
-# fără parolă pentru installer și alte acțiuni de admin în sesiunea live
+# no password prompts for the installer and other admin actions in the live session
 mkdir -p /etc/polkit-1/rules.d
 cat > /etc/polkit-1/rules.d/49-fedorium-liveuser.rules <<'EOF'
 polkit.addRule(function(action, subject) {
@@ -24,7 +24,7 @@ polkit.addRule(function(action, subject) {
 EOF
 chmod 644 /etc/polkit-1/rules.d/49-fedorium-liveuser.rules
 
-# autologin în Plasma
+# autologin into Plasma
 mkdir -p /etc/sddm.conf.d
 cat > /etc/sddm.conf.d/zz-fedorium-live.conf <<EOF
 [Autologin]
@@ -33,11 +33,11 @@ Session=plasma
 Relogin=true
 EOF
 
-# iconița de instalare pe desktop
+# installer icon on the desktop
 if [ -f /usr/share/applications/liveinst.desktop ]; then
     install -d -o liveuser -g liveuser /home/liveuser/Desktop
     install -m 755 -o liveuser -g liveuser /usr/share/applications/liveinst.desktop \
         /home/liveuser/Desktop/liveinst.desktop
 fi
-echo "gata"
+echo "done"
 exit 0

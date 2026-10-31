@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Generează imaginea ecranului de boot Fedorium: logo + „fedorium” în Comfortaa (fontul scrisului Fedora).
-Utilizare: make-splash.py ieșire.png"""
+"""Generates the Fedorium boot splash image: logo + "fedorium" in Comfortaa.
+Usage: make-splash.py output.png"""
 import subprocess, sys
 from PIL import Image, ImageDraw, ImageFont
 
@@ -14,7 +14,7 @@ def find_font():
                 return p
         except FileNotFoundError:
             pass
-    print("ATENȚIE: nu găsesc fontul Comfortaa (sudo dnf install aajohan-comfortaa-fonts); folosesc alt font.")
+    print("WARNING: Comfortaa font not found (sudo dnf install aajohan-comfortaa-fonts); using a fallback font.")
     for p in ("/usr/share/fonts/dejavu-sans-fonts/DejaVuSans-Bold.ttf",
               "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"):
         try:
@@ -23,13 +23,13 @@ def find_font():
             pass
     return None
 
-SS = 3                       # supersampling pentru margini netede
+SS = 3                       # supersampling for smooth edges
 W, H = 560, 440
-LOGO = 270                   # înălțimea logo-ului (px)
+LOGO = 270                   # logo height (px)
 img = Image.new("RGBA", (W * SS, H * SS), (0, 0, 0, 0))
 d = ImageDraw.Draw(img)
 
-# --- logo (aceleași coordonate ca fedorium-logo.svg, viewBox 20 20 360 360) ---
+# --- logo (same coordinates as fedorium-logo.svg, viewBox 20 20 360 360) ---
 s = LOGO * SS / 360
 ox = (W * SS - 360 * s) / 2 - 20 * s
 oy = 0 - 20 * s
@@ -49,7 +49,7 @@ for br in ([(184,197),(170,206),(184,215)], [(216,197),(230,206),(216,215)]):
 x0, y0 = P(88, 234, 10); x1, y1 = P(312, 258, 10)
 d.rounded_rectangle([x0, y0, x1, y1], radius=12 * s, fill="#3C6EB4")
 
-# --- scrisul „fedorium” ---
+# --- the word "fedorium" ---
 fp = find_font()
 font = ImageFont.truetype(fp, 84 * SS) if fp else ImageFont.load_default()
 text = "fedorium"
@@ -59,4 +59,4 @@ ty = (LOGO + 40) * SS - bb[1]
 d.text((tx, ty), text, font=font, fill="#FFFFFF")
 
 img.resize((W, H), Image.LANCZOS).save(out)
-print(f"Ecran de boot generat: {out} (font: {fp})")
+print(f"Boot splash generated: {out} (font: {fp})")

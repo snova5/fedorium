@@ -1,5 +1,5 @@
-# Fedorium Linux — kickstart pentru ISO live KDE Plasma
-# @VER@ și @REPO@ sunt înlocuite automat de build.sh
+# Fedorium Linux — kickstart for the KDE Plasma live ISO
+# @VER@ and @REPO@ are filled in by build.sh
 
 lang en_US.UTF-8
 keyboard --vckeymap=us --xlayouts='us'
@@ -26,7 +26,7 @@ repo --name=fedorium --baseurl=file://@REPO@
 @kde-media
 firefox
 
-# --- live + instalator ---
+# --- live session + installer ---
 anaconda-live
 @anaconda-tools
 dracut-live
@@ -47,7 +47,7 @@ grub2-pc-modules
 shim-x64
 efibootmgr
 
-# --- branding Fedorium (fără mărci Fedora) ---
+# --- Fedorium branding (no Fedora trademarks) ---
 -fedora-logos*
 -fedora-release*
 generic-logos
@@ -55,15 +55,15 @@ generic-release
 generic-release-notes
 fedorium-branding
 
-# --- ecran de login ---
+# --- login screen ---
 sddm
 sddm-breeze
 
-# --- ecran de boot ---
+# --- boot splash ---
 plymouth-plugin-two-step
 plymouth-theme-spinner
 
-# --- utilitare mereu utile ---
+# --- always-useful tools ---
 flatpak
 pciutils
 kdialog
@@ -72,9 +72,9 @@ fastfetch
 
 %post --log=/root/fedorium-post.log
 set -x
-# --- sesiune live KDE (livesys) ---
+# --- KDE live session (livesys) ---
 for u in livesys.service livesys-late.service; do
-    systemctl enable "$u" || echo "AVERTISMENT: nu pot activa $u"
+    systemctl enable "$u" || echo "WARNING: cannot enable $u"
 done
 touch /etc/sysconfig/livesys
 if grep -q '^livesys_session=' /etc/sysconfig/livesys; then
@@ -83,34 +83,34 @@ else
     echo 'livesys_session="kde"' >> /etc/sysconfig/livesys
 fi
 
-# plasă de siguranță Fedorium: utilizator live + autologin, chiar dacă livesys pică
+# Fedorium safety net: live user + autologin even if livesys fails
 systemctl enable fedorium-live.service || :
 
-# --- ecranul de login: SDDM ---
+# --- login screen: SDDM ---
 systemctl disable plasmalogin.service 2>/dev/null || :
-systemctl enable sddm.service || echo "AVERTISMENT: nu pot activa sddm"
+systemctl enable sddm.service || echo "WARNING: cannot enable sddm"
 systemctl set-default graphical.target
 
-# --- ecranul de boot Fedorium ---
+# --- Fedorium boot splash ---
 plymouth-set-default-theme fedorium || :
 
-# --- numele sistemului ---
+# --- system name ---
 /usr/libexec/fedorium-os-release || :
 echo "fedorium" > /etc/hostname
 
-# --- DNS: resolv.conf trebuie să fie link spre systemd-resolved, nu copia de pe PC-ul de build ---
+# --- DNS: resolv.conf must link to systemd-resolved, not be a copy from the build host ---
 rm -f /etc/resolv.conf
 ln -s ../run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
 systemctl enable systemd-resolved.service || :
 
-# --- limba: engleză (US) ---
+# --- language: English (US) ---
 echo 'LANG=en_US.UTF-8' > /etc/locale.conf
 printf 'KEYMAP=us\n' > /etc/vconsole.conf
 
-# --- etichete SELinux corecte (build-ul rulează cu SELinux pe permissive) ---
+# --- fix SELinux labels (the build runs with SELinux permissive) ---
 restorecon -RF /etc /usr /var /root /opt 2>/dev/null || :
 
-# rezumat în jurnal
+# summary in the log
 systemctl is-enabled livesys.service livesys-late.service fedorium-live.service sddm.service || :
 systemctl get-default || :
 %end
