@@ -24,7 +24,7 @@
 
 ## Download
 
-Grab the ISO and its `.sha256` file from the [releases page](#) and check it:
+Grab the ISO and its `.sha256` file from the [releases page](https://github.com/snova5/fedorium/releases) and check it:
 
 ```bash
 sha256sum -c Fedorium-44-x86_64.iso.sha256
