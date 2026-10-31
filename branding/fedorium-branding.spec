@@ -1,6 +1,6 @@
 # COPR account name that publishes Fedorium updates (https://copr.fedorainfracloud.org).
 # Change CHANGEME to your COPR username so installed systems get updates.
-%global copr_owner CHANGEME
+%global copr_owner snova5
 %global copr_project fedorium
 
 Name:           fedorium-branding
