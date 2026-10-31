@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Fedorium First Login
+Exec=/usr/libexec/fedorium-firstlogin
+Terminal=false
+NoDisplay=true
+X-KDE-autostart-phase=2

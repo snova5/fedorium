@@ -1,0 +1,95 @@
+#!/bin/bash
+# Fedorium Setup — profile picker (Gaming / Coding / Ricing)
+# Runs on first login after installation, and anytime from the app menu.
+
+TITLE="Fedorium Setup"
+ICON="fedorium-logo"
+MARK_DIR="$HOME/.config/fedorium"
+MARK="$MARK_DIR/setup-done"
+STATUS="/var/lib/fedorium/last-run"
+
+if [ "$1" = "--autostart" ]; then
+    [ -f "$MARK" ] && exit 0
+    # don't run in the live session of the ISO
+    [ "$USER" = "liveuser" ] && exit 0
+    sleep 5
+fi
+
+kdialog --title "$TITLE" --icon "$ICON" \
+    --yes-label "Continue" --no-label "Later" \
+    --yesno "Welcome to Fedorium Linux!\n\nChoose what you want to install:\nGaming, Coding or Ricing.\n\nYou can run this wizard again anytime from the menu: Fedorium Setup." \
+    || exit 0
+
+PROFILES=$(kdialog --title "$TITLE" --icon "$ICON" --separate-output --checklist \
+    "Choose your profiles (you can pick more than one):" \
+    gaming "Gaming — Steam, Lutris, Heroic, GameMode, MangoHud, drivers" on \
+    coding "Coding — GCC/Clang, Python, Node.js, Rust, Go, Java, VS Code, Podman" on \
+    ricing "Ricing — Kvantum, Papirus, fastfetch, btop, cava" off) || exit 0
+
+if [ -z "$PROFILES" ]; then
+    kdialog --title "$TITLE" --sorry "No profile selected. You can run Fedorium Setup later from the menu."
+    exit 0
+fi
+
+ARGS=()
+SUMMARY=""
+if grep -qx gaming <<<"$PROFILES"; then
+    ARGS+=(--gaming)
+    GPUINFO=$(lspci -nn 2>/dev/null | grep -Ei 'vga|3d|display' || true)
+    DET="intel"
+    if grep -qi nvidia <<<"$GPUINFO"; then DET="nvidia"
+    elif grep -Eqi 'amd|ati|radeon' <<<"$GPUINFO"; then DET="amd"; fi
+    a=off; n=off; i=off
+    case $DET in amd) a=on;; nvidia) n=on;; intel) i=on;; esac
+    GPU=$(kdialog --title "$TITLE" --icon "$ICON" --radiolist \
+        "Which graphics card do you have?\n(auto-detected: ${DET^^})" \
+        amd "AMD Radeon — Mesa + Vulkan, full video codecs" $a \
+        nvidia "NVIDIA GeForce — proprietary driver (akmod-nvidia)" $n \
+        intel "Intel — Mesa + Vulkan + video acceleration" $i) || exit 0
+    ARGS+=("--gpu=$GPU")
+    SUMMARY=" (GPU: ${GPU^^})"
+
+    GPUTOOL_DESC="CoreCtrl — fan control, overclocking and GPU profiles (AMD)"
+    [ "$GPU" = "nvidia" ] && GPUTOOL_DESC="GreenWithEnvy — fan control, overclocking and monitoring (NVIDIA)"
+    GPUTOOL_ROW=(gputool "$GPUTOOL_DESC" off)
+    [ "$GPU" = "intel" ] && GPUTOOL_ROW=()
+
+    EXTRAS=$(kdialog --title "$TITLE" --icon "$ICON" --separate-output --checklist \
+        "Gaming extras (pick what you want):\n\nSteam, Lutris, Heroic, GameMode, MangoHud, Gamescope,\nProtonUp-Qt and Discord are always installed." \
+        wine "Wine — run Windows programs and games" on \
+        winetricks "Winetricks — install Windows libraries for Wine" on \
+        prism "Prism Launcher — Minecraft (Java) with mods" on \
+        obs "OBS Studio — streaming and screen recording" off \
+        bottles "Bottles — run Windows apps the easy way" off \
+        "${GPUTOOL_ROW[@]}" \
+        emu "Emulators — RetroArch, PCSX2 (PS2), Dolphin (GameCube/Wii)" off) || exit 0
+
+    while read -r e; do
+        [ -n "$e" ] && ARGS+=("--$e")
+    done <<<"$EXTRAS"
+    [ -n "$EXTRAS" ] && SUMMARY+="\n   extras: $(tr '\n' ' ' <<<"$EXTRAS")"
+fi
+grep -qx coding <<<"$PROFILES" && ARGS+=(--coding)
+grep -qx ricing <<<"$PROFILES" && ARGS+=(--ricing)
+
+kdialog --title "$TITLE" --icon "$ICON" --yes-label "Install" --no-label "Cancel" \
+    --yesno "The following will be installed:\n\n$(sed 's/^/ • /' <<<"$PROFILES")${SUMMARY}\n\nYou will be asked for your password. This takes a few minutes\ndepending on your internet speed. Don't close the terminal window." \
+    || exit 0
+
+CMD="pkexec /usr/libexec/fedorium-install ${ARGS[*]}; echo; read -rp 'Press Enter to close...'"
+konsole --nofork -p tabtitle="Fedorium Setup" -e bash -c "$CMD"
+
+if [ -f "$STATUS" ]; then
+    mkdir -p "$MARK_DIR" && touch "$MARK"
+    # Coding profile -> purple Fedorium Coding wallpaper and launcher icon
+    if grep -qx coding <<<"$PROFILES"; then
+        /usr/libexec/fedorium-apply-theme purple
+    fi
+    if grep -q '^ok' "$STATUS"; then
+        kdialog --title "$TITLE" --icon "$ICON" --msgbox "All done! Everything was installed.\n\nRestart your computer to apply the drivers and settings."
+    else
+        kdialog --title "$TITLE" --icon "$ICON" --sorry "Setup finished, but some steps failed:\n\n$(tail -n +2 "$STATUS")\n\nYou can run Fedorium Setup again from the menu."
+    fi
+else
+    kdialog --title "$TITLE" --sorry "Setup was cancelled or didn't start.\nYou can run Fedorium Setup again from the menu."
+fi

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Fedorium Setup
+Exec=fedorium-setup --autostart
+Icon=fedorium-logo
+Terminal=false
+NoDisplay=true
+X-KDE-autostart-phase=2

@@ -1,0 +1,115 @@
+#!/bin/bash
+# Fedorium — installs the chosen profiles (runs as root, started by Fedorium Setup)
+# Usage: fedorium-install [--gaming --gpu=amd|nvidia|intel] [--coding] [--ricing]
+
+if [ "$(id -u)" -ne 0 ]; then echo "Must be run as root (pkexec)."; exit 1; fi
+
+GAMING=0; CODING=0; RICING=0; GPU=none
+WINE=0; WINETRICKS=0; PRISM=0; OBS=0; BOTTLES=0; GPUTOOL=0; EMU=0
+for a in "$@"; do
+    case $a in
+        --gaming) GAMING=1 ;;
+        --wine) WINE=1 ;;
+        --winetricks) WINETRICKS=1 ;;
+        --prism) PRISM=1 ;;
+        --obs) OBS=1 ;;
+        --bottles) BOTTLES=1 ;;
+        --gputool) GPUTOOL=1 ;;
+        --emu) EMU=1 ;;
+        --coding) CODING=1 ;;
+        --ricing) RICING=1 ;;
+        --gpu=*)  GPU=${a#--gpu=} ;;
+    esac
+done
+
+C='\e[1;36m'; G='\e[32m'; R='\e[31m'; Y='\e[33m'; N='\e[0m'
+FAILED=()
+step() {
+    local d="$1"; shift
+    echo -e "\n${C}==> ${d}${N}"
+    if "$@"; then echo -e "${G}    OK${N}"; else echo -e "${R}    FAILED${N}"; FAILED+=("$d"); fi
+}
+
+DNF="dnf -y"
+FV=$(rpm -E %fedora)
+FLATPAK="flatpak install -y --noninteractive --system flathub"
+
+echo -e "${C}"
+echo "  ███ Fedorium Setup ███"
+echo -e "${N}  Gaming=$GAMING  GPU=$GPU  Coding=$CODING  Ricing=$RICING"
+
+# ---------- common ----------
+step "Enabling RPM Fusion (free + nonfree)" $DNF install \
+    "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$FV.noarch.rpm" \
+    "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$FV.noarch.rpm"
+step "Enabling Flathub" bash -c "flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo && flatpak remote-modify --enable --no-filter flathub"
+step "Multimedia codecs (full ffmpeg)" $DNF swap ffmpeg-free ffmpeg --allowerasing
+
+# ---------- gaming ----------
+if [ "$GAMING" = 1 ]; then
+    case $GPU in
+        amd)
+            step "AMD drivers: Mesa + Vulkan (64 and 32-bit)" $DNF install mesa-vulkan-drivers mesa-vulkan-drivers.i686 mesa-dri-drivers.i686 vulkan-tools
+            step "AMD video acceleration (VA-API freeworld)" $DNF swap mesa-va-drivers mesa-va-drivers-freeworld --allowerasing
+            ;;
+        nvidia)
+            step "NVIDIA driver (akmod-nvidia + CUDA + 32-bit libs)" $DNF install akmod-nvidia xorg-x11-drv-nvidia-cuda xorg-x11-drv-nvidia-libs.i686 vulkan-tools
+            step "Building the NVIDIA kernel module (may take a few minutes)" akmods --force
+            if mokutil --sb-state 2>/dev/null | grep -qi enabled; then
+                echo -e "\n${Y}Secure Boot is ON. The NVIDIA driver must be signed.${N}"
+                echo -e "${Y}Choose a temporary password now. On the next reboot a blue screen appears:${N}"
+                echo -e "${Y}pick 'Enroll MOK' → 'Continue' → 'Yes' and enter the same password.${N}"
+                step "Enrolling the signing key (MOK)" bash -c "kmodgenca -a; mokutil --import /etc/pki/akmods/certs/public_key.der"
+            fi
+            ;;
+        intel)
+            step "Intel drivers: Mesa + Vulkan + video acceleration" $DNF install mesa-vulkan-drivers mesa-vulkan-drivers.i686 mesa-dri-drivers.i686 intel-media-driver vulkan-tools
+            ;;
+    esac
+    step "Steam, Lutris, GameMode, MangoHud, Gamescope" $DNF install steam lutris gamemode mangohud gamescope
+    step "Heroic Games Launcher, ProtonUp-Qt, Discord (Flatpak)" $FLATPAK com.heroicgameslauncher.hgl net.davidotek.pupgui2 com.discordapp.Discord
+
+    [ "$WINE" = 1 ]       && step "Wine" $DNF install wine
+    [ "$WINETRICKS" = 1 ] && step "Winetricks" $DNF install winetricks
+    [ "$PRISM" = 1 ]      && step "Prism Launcher (Minecraft)" $FLATPAK org.prismlauncher.PrismLauncher
+    [ "$OBS" = 1 ]        && step "OBS Studio" $FLATPAK com.obsproject.Studio
+    [ "$BOTTLES" = 1 ]    && step "Bottles" $FLATPAK com.usebottles.bottles
+    if [ "$GPUTOOL" = 1 ]; then
+        case $GPU in
+            amd)    step "CoreCtrl" $DNF install corectrl ;;
+            nvidia) step "GreenWithEnvy" $FLATPAK com.leinardi.gwe ;;
+        esac
+    fi
+    [ "$EMU" = 1 ]        && step "Emulators: RetroArch, PCSX2, Dolphin" $FLATPAK org.libretro.RetroArch net.pcsx2.PCSX2 org.DolphinEmu.dolphin-emu
+fi
+
+# ---------- coding ----------
+if [ "$CODING" = 1 ]; then
+    step "Base development tools" $DNF group install development-tools c-development
+    step "Compilers and languages (GCC, Clang, Python, Node, Rust, Go, Java)" $DNF install \
+        gcc gcc-c++ clang cmake ninja-build gdb make git git-lfs \
+        python3-pip python3-devel nodejs npm rust cargo golang java-latest-openjdk-devel
+    step "Containers (Podman, Distrobox)" $DNF install podman podman-compose distrobox
+    step "Terminal editor (Neovim)" $DNF install neovim
+    step "Microsoft repository for VS Code" bash -c '
+        rpm --import https://packages.microsoft.com/keys/microsoft.asc &&
+        printf "[code]\nname=Visual Studio Code\nbaseurl=https://packages.microsoft.com/yumrepos/vscode\nenabled=1\nautorefresh=1\ntype=rpm-md\ngpgcheck=1\ngpgkey=https://packages.microsoft.com/keys/microsoft.asc\n" > /etc/yum.repos.d/vscode.repo'
+    step "Visual Studio Code" $DNF install code
+fi
+
+# ---------- ricing ----------
+if [ "$RICING" = 1 ]; then
+    step "Kvantum, Papirus, fastfetch, btop, cava" $DNF install kvantum papirus-icon-theme fastfetch btop cava
+fi
+
+# ---------- result ----------
+mkdir -p /var/lib/fedorium
+if [ ${#FAILED[@]} -eq 0 ]; then
+    echo "ok" > /var/lib/fedorium/last-run
+    echo -e "\n${G}✔ All done! Everything was installed. Restart your computer.${N}"
+else
+    { echo "partial"; printf '%s\n' "${FAILED[@]}"; } > /var/lib/fedorium/last-run
+    echo -e "\n${Y}Finished, but these steps failed:${N}"
+    printf '  - %s\n' "${FAILED[@]}"
+fi
+chmod 644 /var/lib/fedorium/last-run

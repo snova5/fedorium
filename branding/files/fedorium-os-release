@@ -1,0 +1,19 @@
+#!/bin/sh
+# Fedorium — sets the system name in os-release (run at install and when generic-release updates)
+f=/usr/lib/os-release
+[ -e "$f" ] || exit 0
+VID=$(. "$f"; echo "$VERSION_ID")
+sed -i --follow-symlinks \
+    -e 's/^NAME=.*/NAME="Fedorium Linux"/' \
+    -e "s/^PRETTY_NAME=.*/PRETTY_NAME=\"Fedorium Linux $VID\"/" \
+    -e 's/^ID=.*/ID=fedorium/' \
+    -e '/^ID_LIKE=/d' \
+    -e '/^LOGO=/d' \
+    -e '/^DEFAULT_HOSTNAME=/d' \
+    "$f"
+{
+    echo 'ID_LIKE=fedora'
+    echo 'LOGO=fedorium-logo'
+    echo 'DEFAULT_HOSTNAME="fedorium"'
+} >> "$f"
+exit 0

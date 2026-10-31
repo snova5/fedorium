@@ -1,0 +1,7 @@
+#!/bin/bash
+# Fedorium — applies the default wallpaper and launcher icon on each user's first login.
+MARK="$HOME/.config/fedorium/firstlogin-done"
+[ -f "$MARK" ] && exit 0
+sleep 2
+/usr/libexec/fedorium-apply-theme blue
+mkdir -p "$(dirname "$MARK")" && touch "$MARK"

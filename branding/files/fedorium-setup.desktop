@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Fedorium Setup
+GenericName=Fedorium profile picker
+Comment=Install the Gaming, Coding and Ricing profiles
+Exec=fedorium-setup
+Icon=fedorium-logo
+Terminal=false
+Categories=System;Settings;

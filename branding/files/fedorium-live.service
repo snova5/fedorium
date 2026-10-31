@@ -1,0 +1,13 @@
+[Unit]
+Description=Fedorium live session setup
+ConditionKernelCommandLine=rd.live.image
+After=livesys.service systemd-user-sessions.service
+Before=display-manager.service sddm.service plasmalogin.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/fedorium-live
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

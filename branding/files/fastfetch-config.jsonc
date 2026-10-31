@@ -1,0 +1,47 @@
+// Fedorium Linux — default fastfetch config (users can override in ~/.config/fastfetch/config.jsonc)
+{
+    "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+    "logo": {
+        "type": "file",
+        "source": "/usr/share/fedorium/fastfetch-logo.txt",
+        "color": {
+            "1": "38;5;117",
+            "2": "38;5;68",
+            "3": "97"
+        },
+        "padding": {
+            "top": 1,
+            "right": 3
+        }
+    },
+    "display": {
+        "separator": "  ",
+        "color": {
+            "keys": "38;5;117",
+            "title": "38;5;68"
+        }
+    },
+    "modules": [
+        "title",
+        "separator",
+        "os",
+        "host",
+        "kernel",
+        "uptime",
+        "packages",
+        "shell",
+        "display",
+        "de",
+        "wm",
+        "theme",
+        "icons",
+        "terminal",
+        "cpu",
+        "gpu",
+        "memory",
+        "disk",
+        "localip",
+        "break",
+        "colors"
+    ]
+}

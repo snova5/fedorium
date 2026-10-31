@@ -1,0 +1,8 @@
+{
+    "KPlugin": {
+        "Id": "Fedorium",
+        "Name": "Fedorium",
+        "Authors": [ { "Name": "Fedorium Linux" } ],
+        "License": "CC-BY-SA-4.0"
+    }
+}
