@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="3840" height="2160" viewBox="0 0 3840 2160">
+<rect width="3840" height="2160" fill="#000000"/>
+<g transform="translate(1660,820) scale(1.3)">
+<polygon points="200,34 344,117 344,283 200,366 56,283 56,117" fill="none" stroke="#8EC9F0" stroke-width="16" stroke-linejoin="round"/>
+<g transform="translate(0,10)">
+<path d="M140 226 L152 142 Q155 128 169 131 L190 139 L200 151 L210 139 L231 131 Q245 128 248 142 L260 226 Z" fill="#3C6EB4"/>
+<polygon points="144.5,192 255.5,192 259.3,220 140.7,220" fill="#8EC9F0"/>
+<path d="M184 197 L170 206 L184 215" fill="none" stroke="#294172" stroke-width="6" stroke-linecap="square" stroke-linejoin="miter"/>
+<path d="M216 197 L230 206 L216 215" fill="none" stroke="#294172" stroke-width="6" stroke-linecap="square" stroke-linejoin="miter"/>
+<rect x="88" y="234" width="224" height="24" rx="12" fill="#3C6EB4"/>
+</g>
+</g>
+</svg>
